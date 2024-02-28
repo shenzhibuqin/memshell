@@ -18,8 +18,6 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.util.Scanner;
 
-import static com.example.tomcatmemshell.utils.DynamicUtils.LISTENER_CLASS_STRING;
-
 
 @Controller
 public class AddListenerController {
